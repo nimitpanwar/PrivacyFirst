@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Base configuration - allow HTTPS with more permissive settings -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Specific config for SBI and other banking sites -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">sbi.bank.in</domain>
+        <domain includeSubdomains="true">sbi.co.in</domain>
+        <domain includeSubdomains="true">onlinesbi.sbi</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+    
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">icicibank.com</domain>
+        <domain includeSubdomains="true">kotak.com</domain>
+        <domain includeSubdomains="true">yesbank.in</domain>
+        <domain includeSubdomains="true">citibank.co.in</domain>
+        <domain includeSubdomains="true">americanexpress.com</domain>
+        <domain includeSubdomains="true">ucobank.com</domain>
+        <domain includeSubdomains="true">indusind.com</domain>
+        <domain includeSubdomains="true">hdfcbank.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
