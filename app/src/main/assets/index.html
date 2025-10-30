@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Privacy First Browser</title>
     <style>
         * {
@@ -19,6 +19,8 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            /* Remove any potential margins */
+            margin: 0;
         }
         
         .container {
@@ -67,6 +69,7 @@
         .feature-desc {
             color: #666;
             font-size: 0.95em;
+            line-height: 1.6;
         }
         
         .logo {
@@ -81,6 +84,23 @@
             color: white;
             font-size: 2em;
             font-weight: bold;
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .logo {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5em;
+            }
         }
     </style>
 </head>
