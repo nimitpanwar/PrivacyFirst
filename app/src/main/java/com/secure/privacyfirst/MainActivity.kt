@@ -1,7 +1,9 @@
 package com.secure.privacyfirst
 
 import android.os.Bundle
+import android.webkit.WebView
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +19,10 @@ import com.secure.privacyfirst.ui.theme.PrivacyFirstTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Enable WebView debugging
+        WebView.setWebContentsDebuggingEnabled(true)
+        
         enableEdgeToEdge()
         
         // Make status bar transparent
@@ -34,5 +40,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onBackPressed() {
+        // Handle back button press
+        super.onBackPressedDispatcher.onBackPressed()
     }
 }
