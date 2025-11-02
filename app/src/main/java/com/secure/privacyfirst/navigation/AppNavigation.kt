@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.secure.privacyfirst.ui.screens.OnboardingScreen
 import com.secure.privacyfirst.ui.screens.SplashScreen
+import com.secure.privacyfirst.ui.screens.AuthScreen
 import com.secure.privacyfirst.ui.screens.WebViewScreen
 
 @Composable
@@ -29,7 +30,7 @@ fun AppNavigation() {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
                 onFinish = {
-                    navController.navigate(Screen.WebView.route) {
+                    navController.navigate(Screen.Auth.route) {
                         popUpTo(Screen.Onboarding.route) { inclusive = true }
                     }
                 }
@@ -38,6 +39,11 @@ fun AppNavigation() {
         
         composable(Screen.WebView.route) {
             WebViewScreen()
+        }
+
+        composable(Screen.Auth.route) {
+            // Pass the navController into AuthScreen so it can navigate directly on success.
+            AuthScreen(navController = navController)
         }
         
         composable(Screen.Home.route) {
