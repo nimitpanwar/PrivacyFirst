@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -31,6 +32,10 @@ import androidx.fragment.app.FragmentActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import com.secure.privacyfirst.viewmodel.PasswordViewModel
+import kotlinx.coroutines.launch
 
 /**
  * Simple authentication screen placeholder.
@@ -40,12 +45,15 @@ import androidx.core.content.ContextCompat
 @Composable
 fun AuthScreen(
     navController: NavHostController? = null,
-    onAuthenticated: () -> Unit = {}
+    onAuthenticated: () -> Unit = {},
+    viewModel: PasswordViewModel = viewModel()
 ) {
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var pin by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    val isPinSet by viewModel.isPinSet.collectAsState()
 
     Column(
         modifier = Modifier
@@ -156,14 +164,34 @@ fun AuthScreen(
             onClick = {
                 focusManager.clearFocus()
                 if (pin.length == 4) {
-                    // In a real app validate the PIN securely (call into auth storage / server)
-                    if (navController != null) {
-                        Toast.makeText(context, "PIN accepted", Toast.LENGTH_SHORT).show()
-                        navController.navigate(Screen.WebView.route) {
-                            popUpTo(Screen.Auth.route) { inclusive = true }
+                    if (!isPinSet) {
+                        // No PIN set yet, allow access (for first time users)
+                        if (navController != null) {
+                            Toast.makeText(context, "PIN accepted", Toast.LENGTH_SHORT).show()
+                            navController.navigate(Screen.WebView.route) {
+                                popUpTo(Screen.Auth.route) { inclusive = true }
+                            }
+                        } else {
+                            onAuthenticated()
                         }
                     } else {
-                        onAuthenticated()
+                        // Verify PIN against stored PIN
+                        scope.launch {
+                            val isValid = viewModel.verifyPin(pin)
+                            if (isValid) {
+                                if (navController != null) {
+                                    Toast.makeText(context, "PIN accepted", Toast.LENGTH_SHORT).show()
+                                    navController.navigate(Screen.WebView.route) {
+                                        popUpTo(Screen.Auth.route) { inclusive = true }
+                                    }
+                                } else {
+                                    onAuthenticated()
+                                }
+                            } else {
+                                error = "Invalid PIN"
+                                pin = ""
+                            }
+                        }
                     }
                 } else {
                     error = "Enter a 4-digit PIN"

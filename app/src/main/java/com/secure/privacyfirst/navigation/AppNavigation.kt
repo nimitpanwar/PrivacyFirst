@@ -8,6 +8,8 @@ import com.secure.privacyfirst.ui.screens.OnboardingScreen
 import com.secure.privacyfirst.ui.screens.SplashScreen
 import com.secure.privacyfirst.ui.screens.AuthScreen
 import com.secure.privacyfirst.ui.screens.WebViewScreen
+import com.secure.privacyfirst.ui.screens.PasswordManagerScreen
+import com.secure.privacyfirst.ui.screens.SetupPinScreen
 
 @Composable
 fun AppNavigation() {
@@ -48,6 +50,25 @@ fun AppNavigation() {
         
         composable(Screen.Home.route) {
             // Placeholder for home screen
+        }
+        
+        composable(Screen.PasswordManager.route) {
+            PasswordManagerScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.SetupPin.route) {
+            SetupPinScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onPinSet = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
