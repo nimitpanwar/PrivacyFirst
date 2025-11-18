@@ -18,6 +18,7 @@ class UserPreferencesManager(private val context: Context) {
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         private val USER_NAME = stringPreferencesKey("user_name")
+        private val SECURITY_LEVEL = stringPreferencesKey("security_level")
     }
     
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -32,6 +33,11 @@ class UserPreferencesManager(private val context: Context) {
         preferences[USER_NAME] ?: ""
     }
     
+    val securityLevel: Flow<SecurityLevel> = context.dataStore.data.map { preferences ->
+        val level = preferences[SECURITY_LEVEL] ?: SecurityLevel.MEDIUM.name
+        SecurityLevel.fromString(level)
+    }
+    
     suspend fun setOnboardingCompleted() {
         context.dataStore.edit { preferences ->
             preferences[ONBOARDING_COMPLETED] = true
@@ -42,6 +48,12 @@ class UserPreferencesManager(private val context: Context) {
         context.dataStore.edit { preferences ->
             preferences[SETUP_COMPLETED] = true
             preferences[USER_NAME] = userName
+        }
+    }
+    
+    suspend fun setSecurityLevel(level: SecurityLevel) {
+        context.dataStore.edit { preferences ->
+            preferences[SECURITY_LEVEL] = level.name
         }
     }
 }
