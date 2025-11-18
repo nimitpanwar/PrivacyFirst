@@ -31,10 +31,8 @@ class SettingsActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        // Make status bar transparent
+        // Edge-to-edge automatically handles system bar colors
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.statusBarColor = Color.Transparent.toArgb()
-        window.navigationBarColor = Color.Transparent.toArgb()
         
         setContent {
             PrivacyFirstTheme {

@@ -69,17 +69,15 @@ fun WebViewScreen() {
                         // More permissive security settings
                         mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         allowContentAccess = true
-                        allowFileAccessFromFileURLs = false
-                        allowUniversalAccessFromFileURLs = false
+                        // allowFileAccessFromFileURLs and allowUniversalAccessFromFileURLs are deprecated
+                        // Modern browsers handle these restrictions automatically
                         
                         // Enable necessary features for banking sites
                         setGeolocationEnabled(false)
-                        databaseEnabled = true
+                        // databaseEnabled is deprecated - Web SQL Database is no longer supported
                         javaScriptCanOpenWindowsAutomatically = true
                         
-                        // Don't save sensitive data
-                        saveFormData = false
-                        savePassword = false
+                        // saveFormData and savePassword are deprecated and automatically disabled for security
                         
                         // Enable caching
                         cacheMode = android.webkit.WebSettings.LOAD_DEFAULT

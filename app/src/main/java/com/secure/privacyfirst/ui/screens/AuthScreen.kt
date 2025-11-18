@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.biometric.BiometricManager.Authenticators
 import com.secure.privacyfirst.navigation.Screen
 import androidx.fragment.app.FragmentActivity
 import androidx.biometric.BiometricManager
@@ -108,7 +109,7 @@ fun AuthScreen(
                             })
 
                         val biometricManager = BiometricManager.from(context)
-                        if (biometricManager.canAuthenticate() != BiometricManager.BIOMETRIC_SUCCESS) {
+                        if (biometricManager.canAuthenticate(Authenticators.BIOMETRIC_STRONG) != BiometricManager.BIOMETRIC_SUCCESS) {
                             Toast.makeText(context, "No biometrics enrolled or not available", Toast.LENGTH_SHORT).show()
                             return@Button
                         }

@@ -234,7 +234,7 @@ fun PasswordCard(
             
             if (expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Divider()
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(12.dp))
                 
                 // Username
