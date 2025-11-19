@@ -59,8 +59,6 @@ fun AuthScreen(
 
     val pin = d1 + d2 + d3 + d4
     val submitEnabled = pin.length == 4
-
-    // --- BIOMETRIC FUNCTION ---
     fun startBiometricAuth() {
         val activity = context as? FragmentActivity ?: return
         val executor = ContextCompat.getMainExecutor(context)
@@ -72,7 +70,6 @@ fun AuthScreen(
             Toast.makeText(context, "Biometric not available", Toast.LENGTH_SHORT).show()
             return
         }
-
         val prompt = BiometricPrompt(
             activity,
             executor,
@@ -104,8 +101,6 @@ fun AuthScreen(
 
         prompt.authenticate(info)
     }
-
-    // --- UI ---
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -128,35 +123,26 @@ fun AuthScreen(
                 contentDescription = "App Logo",
                 modifier = Modifier.size(40.dp)
             )
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Text(
                 text = "PRIVACY FIRST BROWSER",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.primary
             )
         }
-
         Spacer(modifier = Modifier.height(20.dp))
-
         Text(
             text = "Enter Security Pin",
             fontSize = 26.sp,
             color = Color.Black
         )
-
         Spacer(modifier = Modifier.height(8.dp))
-
         Text(
             text = "Enter the PIN set during setup",
             fontSize = 13.sp,
             color = Color.Gray
         )
-
         Spacer(modifier = Modifier.height(40.dp))
-
-        // PIN INPUT ROW
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -195,22 +181,17 @@ fun AuthScreen(
             PinDigit(d3, { d3 = it }, r3, r4)
             PinDigit(d4, { d4 = it }, r4, null)
         }
-
         Spacer(modifier = Modifier.height(20.dp))
-
         if (error.isNotEmpty()) {
             Text(error, color = Color.Red)
             Spacer(modifier = Modifier.height(12.dp))
         }
-
-        // SUBMIT BUTTON
         Button(
             onClick = {
                 if (pin.length != 4) {
                     error = "Enter a 4-digit PIN"
                     return@Button
                 }
-
                 scope.launch {
                     val valid = if (!isPinSet) true else viewModel.verifyPin(pin)
 
@@ -239,18 +220,13 @@ fun AuthScreen(
         ) {
             Text("SUBMIT", color = Color.DarkGray)
         }
-
         Spacer(modifier = Modifier.height(16.dp))
-
         Text("OR", color = Color.Gray)
-
         Spacer(modifier = Modifier.height(12.dp))
-
         TextButton(onClick = { startBiometricAuth() }) {
             Text("Verify using your fingerprint")
         }
     }
-
     LaunchedEffect(Unit) {
         r1.requestFocus()
     }
