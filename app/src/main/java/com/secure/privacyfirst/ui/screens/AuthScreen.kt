@@ -32,7 +32,7 @@ import com.secure.privacyfirst.navigation.Screen
 import com.secure.privacyfirst.viewmodel.PasswordViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.text.KeyboardOptions
-
+import androidx.compose.ui.text.font.FontWeight
 @Composable
 fun AuthScreen(
     navController: NavHostController? = null,
@@ -134,7 +134,8 @@ fun AuthScreen(
         Text(
             text = "Enter Security Pin",
             fontSize = 26.sp,
-            color = Color.Black
+            color = Color.Black,
+            fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
