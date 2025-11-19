@@ -216,7 +216,10 @@ fun AuthScreen(
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFDCDCDC)
+                containerColor = Color(0xFF4CAF50),
+                contentColor = Color.White,
+                disabledContainerColor = Color(0xFFDCDCDC),
+                disabledContentColor = Color.DarkGray
             )
         ) {
             Text("SUBMIT", color = Color.DarkGray)
