@@ -154,14 +154,22 @@ fun AuthScreen(
                 value: String,
                 onChange: (String) -> Unit,
                 current: FocusRequester,
-                next: FocusRequester?
+                next: FocusRequester?,
+                previous: FocusRequester?
             ) {
                 OutlinedTextField(
                     value = value,
                     onValueChange = { new ->
                         val digit = new.take(1).filter { it.isDigit() }
                         onChange(digit)
-                        if (digit.isNotEmpty()) next?.requestFocus()
+                        
+                        if (digit.isNotEmpty()) {
+                            // Move forward when entering a digit
+                            next?.requestFocus()
+                        } else if (new.isEmpty() && value.isNotEmpty()) {
+                            // Backspace pressed - cleared current digit, move to previous
+                            previous?.requestFocus()
+                        }
                     },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
@@ -177,10 +185,10 @@ fun AuthScreen(
                 )
             }
 
-            PinDigit(d1, { d1 = it }, r1, r2)
-            PinDigit(d2, { d2 = it }, r2, r3)
-            PinDigit(d3, { d3 = it }, r3, r4)
-            PinDigit(d4, { d4 = it }, r4, null)
+            PinDigit(d1, { d1 = it }, r1, r2, null)
+            PinDigit(d2, { d2 = it }, r2, r3, r1)
+            PinDigit(d3, { d3 = it }, r3, r4, r2)
+            PinDigit(d4, { d4 = it }, r4, null, r3)
         }
         Spacer(modifier = Modifier.height(20.dp))
         if (error.isNotEmpty()) {

@@ -9,12 +9,52 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.secure.privacyfirst.viewmodel.PasswordViewModel
 import kotlinx.coroutines.launch
+
+@Composable
+fun PinBox(
+    value: String,
+    onChange: (String) -> Unit,
+    current: FocusRequester,
+    next: FocusRequester?,
+    previous: FocusRequester?
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { new ->
+            val digit = new.take(1).filter { it.isDigit() }
+            onChange(digit)
+            
+            if (digit.isNotEmpty()) {
+                // Move forward when entering a digit
+                next?.requestFocus()
+            } else if (new.isEmpty() && value.isNotEmpty()) {
+                // Backspace pressed - cleared current digit, move to previous
+                previous?.requestFocus()
+            }
+        },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier
+            .size(60.dp)
+            .focusRequester(current),
+        shape = RoundedCornerShape(10.dp),
+        textStyle = LocalTextStyle.current.copy(
+            fontSize = 20.sp,
+            textAlign = TextAlign.Center
+        )
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,12 +63,32 @@ fun SetupPinScreen(
     onPinSet: () -> Unit,
     viewModel: PasswordViewModel = viewModel()
 ) {
-    var pin by remember { mutableStateOf("") }
-    var confirmPin by remember { mutableStateOf("") }
+    var pin1 by remember { mutableStateOf("") }
+    var pin2 by remember { mutableStateOf("") }
+    var pin3 by remember { mutableStateOf("") }
+    var pin4 by remember { mutableStateOf("") }
+    
+    var confirmPin1 by remember { mutableStateOf("") }
+    var confirmPin2 by remember { mutableStateOf("") }
+    var confirmPin3 by remember { mutableStateOf("") }
+    var confirmPin4 by remember { mutableStateOf("") }
+    
+    val r1 = remember { FocusRequester() }
+    val r2 = remember { FocusRequester() }
+    val r3 = remember { FocusRequester() }
+    val r4 = remember { FocusRequester() }
+    val cr1 = remember { FocusRequester() }
+    val cr2 = remember { FocusRequester() }
+    val cr3 = remember { FocusRequester() }
+    val cr4 = remember { FocusRequester() }
+    
     var error by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val isPinSet by viewModel.isPinSet.collectAsState()
+    
+    val pin = pin1 + pin2 + pin3 + pin4
+    val confirmPin = confirmPin1 + confirmPin2 + confirmPin3 + confirmPin4
     
     LaunchedEffect(Unit) {
         // Check if PIN is already set
@@ -80,37 +140,43 @@ fun SetupPinScreen(
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    OutlinedTextField(
-                        value = pin,
-                        onValueChange = { new ->
-                            val filtered = new.filter { it.isDigit() }.take(4)
-                            pin = filtered
-                            if (error.isNotEmpty()) error = ""
-                        },
-                        label = { Text("Enter PIN") },
-                        placeholder = { Text("••••") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = error.isNotEmpty()
+                    Text(
+                        text = "Enter PIN",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
-                    OutlinedTextField(
-                        value = confirmPin,
-                        onValueChange = { new ->
-                            val filtered = new.filter { it.isDigit() }.take(4)
-                            confirmPin = filtered
-                            if (error.isNotEmpty()) error = ""
-                        },
-                        label = { Text("Confirm PIN") },
-                        placeholder = { Text("••••") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        isError = error.isNotEmpty()
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        PinBox(pin1, { pin1 = it; if (error.isNotEmpty()) error = "" }, r1, r2, null)
+                        PinBox(pin2, { pin2 = it; if (error.isNotEmpty()) error = "" }, r2, r3, r1)
+                        PinBox(pin3, { pin3 = it; if (error.isNotEmpty()) error = "" }, r3, r4, r2)
+                        PinBox(pin4, { pin4 = it; if (error.isNotEmpty()) error = "" }, r4, cr1, r3)
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "Confirm PIN",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        PinBox(confirmPin1, { confirmPin1 = it; if (error.isNotEmpty()) error = "" }, cr1, cr2, null)
+                        PinBox(confirmPin2, { confirmPin2 = it; if (error.isNotEmpty()) error = "" }, cr2, cr3, cr1)
+                        PinBox(confirmPin3, { confirmPin3 = it; if (error.isNotEmpty()) error = "" }, cr3, cr4, cr2)
+                        PinBox(confirmPin4, { confirmPin4 = it; if (error.isNotEmpty()) error = "" }, cr4, null, cr3)
+                    }
                     
                     if (error.isNotEmpty()) {
                         Text(
