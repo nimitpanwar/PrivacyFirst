@@ -1,0 +1,392 @@
+{
+	"info": {
+		"_postman_id": "whitelist-api-collection",
+		"name": "Whitelist API",
+		"description": "API collection for testing the Whitelist backend endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5001",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    var jsonData = pm.response.json();",
+							"    pm.collectionVariables.set(\"auth_token\", jsonData.token);",
+							"    pm.environment.set(\"auth_token\", jsonData.token);",
+							"    console.log(\"Token saved: \" + jsonData.token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Byf8$G&F*G8vGEfuhfuhfEHU!89f2qfiHT88%ffyutf7^s\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"login"
+					]
+				},
+				"description": "Login to get JWT token. Token is automatically saved to collection variable."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Whitelist",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/whitelist",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist"
+					]
+				},
+				"description": "Retrieve all whitelisted URLs. Requires authentication."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Add URL (JSON Body)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"url\": \"https://example.com\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/add",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"add"
+					]
+				},
+				"description": "Add a new URL to the whitelist using JSON body. Change the URL value before sending."
+			},
+			"response": []
+		},
+		{
+			"name": "3b. Add URL (Query String)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/add?url=https://google.com",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"add"
+					],
+					"query": [
+						{
+							"key": "url",
+							"value": "https://google.com"
+						}
+					]
+				},
+				"description": "Add a new URL using query string parameter (alternative method for clients that can't send JSON body)."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Update URL (JSON Body)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"oldUrl\": \"https://example.com\",\n  \"newUrl\": \"https://updated-example.com\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/update",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"update"
+					]
+				},
+				"description": "Update an existing URL in the whitelist. Change oldUrl and newUrl values before sending."
+			},
+			"response": []
+		},
+		{
+			"name": "4b. Update URL (Query String)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/update?oldUrl=https://google.com&newUrl=https://google.co.uk",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"update"
+					],
+					"query": [
+						{
+							"key": "oldUrl",
+							"value": "https://google.com"
+						},
+						{
+							"key": "newUrl",
+							"value": "https://google.co.uk"
+						}
+					]
+				},
+				"description": "Update URL using query string parameters (alternative method)."
+			},
+			"response": []
+		},
+		{
+			"name": "5. Delete URL (JSON Body)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"url\": \"https://example.com\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/delete",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"delete"
+					]
+				},
+				"description": "Delete a URL from the whitelist. Change the URL value before sending."
+			},
+			"response": []
+		},
+		{
+			"name": "5b. Delete URL (Query String)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/delete?url=https://google.co.uk",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"delete"
+					],
+					"query": [
+						{
+							"key": "url",
+							"value": "https://google.co.uk"
+						}
+					]
+				},
+				"description": "Delete URL using query string parameter (alternative method)."
+			},
+			"response": []
+		},
+		{
+			"name": "Test: Invalid Token",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer invalid_token_here",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/whitelist",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist"
+					]
+				},
+				"description": "Test with invalid token - should return 401 Unauthorized"
+			},
+			"response": []
+		},
+		{
+			"name": "Test: No Token",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/whitelist",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist"
+					]
+				},
+				"description": "Test without token - should return 401 Unauthorized"
+			},
+			"response": []
+		},
+		{
+			"name": "Test: Invalid URL Format",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{auth_token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"url\": \"not-a-valid-url\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/whitelist/add",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"whitelist",
+						"add"
+					]
+				},
+				"description": "Test adding invalid URL format - should return 400 Bad Request"
+			},
+			"response": []
+		}
+	]
+}

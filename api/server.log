@@ -1,0 +1,11 @@
+nohup: ignoring input
+[dotenv@17.2.3] injecting env (6) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+routes/auth loaded
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+MongoDB connected
+Server running on:
+- http://localhost:5001
+- http://192.168.2.244:5001
+Bound to 0.0.0.0 so the server is reachable from the network (if firewall/hosting allows).
+Opened default browser via xdg-open
