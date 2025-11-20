@@ -29,10 +29,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,9 +44,11 @@ import com.secure.privacyfirst.MainActivity
 import com.secure.privacyfirst.SettingsActivity
 import com.secure.privacyfirst.data.SecurityLevel
 import com.secure.privacyfirst.data.UserPreferencesManager
+import com.secure.privacyfirst.network.WhitelistRepository
 import com.secure.privacyfirst.ui.components.CameraAccessWarningDialog
 import com.secure.privacyfirst.ui.components.ExternalAppWarningDialog
 import com.secure.privacyfirst.ui.components.MicrophoneAccessWarningDialog
+import kotlinx.coroutines.launch
 
 private const val TAG = "WebViewScreen"
 private const val CAMERA_PERMISSION_REQUEST_CODE = 100
@@ -53,9 +57,16 @@ private const val MIC_PERMISSION_REQUEST_CODE = 101
 @Composable
 fun WebViewScreen() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val preferencesManager = remember { UserPreferencesManager(context) }
+    val whitelistRepository = remember { WhitelistRepository(context) }
     val securityLevel by preferencesManager.securityLevel.collectAsState(initial = SecurityLevel.MEDIUM)
+    val userName by preferencesManager.userName.collectAsState(initial = "")
     var webView by remember { mutableStateOf<WebView?>(null) }
+    
+    // Whitelist state
+    var whitelistUrls by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isLoadingWhitelist by remember { mutableStateOf(true) }
     
     // Warning dialog states
     var showCameraWarning by remember { mutableStateOf(false) }
@@ -63,6 +74,52 @@ fun WebViewScreen() {
     var showExternalAppWarning by remember { mutableStateOf(false) }
     var externalUrl by remember { mutableStateOf("") }
     var pendingPermissionRequest by remember { mutableStateOf<PermissionRequest?>(null) }
+    
+    // Fetch whitelist on start
+    LaunchedEffect(Unit) {
+        scope.launch {
+            Log.d(TAG, "Fetching whitelist from server...")
+            val result = whitelistRepository.getWhitelist()
+            result.onSuccess { urls ->
+                whitelistUrls = urls
+                isLoadingWhitelist = false
+                Log.d(TAG, "Whitelist loaded from server: ${urls.size} URLs")
+                Toast.makeText(
+                    context, 
+                    "✓ Whitelist loaded from server: ${urls.size} URLs", 
+                    Toast.LENGTH_SHORT
+                ).show()
+            }.onFailure { error ->
+                Log.e(TAG, "Failed to fetch whitelist: ${error.message}", error)
+                isLoadingWhitelist = false
+                // Fallback to hardcoded list
+                whitelistUrls = listOf(
+                    "1drv.ms",
+                    "onedrive.live.com",
+                    "sbi.bank.in",
+                    "onlinesbi.sbi",
+                    "sbi.co.in",
+                    "icicibank.com",
+                    "infinity.icicibank.com",
+                    "kotak.com",
+                    "netbanking.kotak.com",
+                    "yesbank.in",
+                    "citibank.co.in",
+                    "online.citibank.co.in",
+                    "americanexpress.com",
+                    "ucobank.com",
+                    "indusind.com",
+                    "hdfcbank.com",
+                    "netbanking.hdfcbank.com"
+                )
+                Toast.makeText(
+                    context, 
+                    "Using local whitelist (server unavailable)", 
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
     
     // Apply window security flags based on security level
     DisposableEffect(securityLevel) {
@@ -246,25 +303,31 @@ fun WebViewScreen() {
                             // Verify it's a banking domain
                             val uri = Uri.parse(url)
                             val host = uri.host?.lowercase() ?: ""
-                            val allowedDomains = listOf(
-                                "1drv.ms",
-                                "onedrive.live.com",
-                                "sbi.bank.in",
-                                "onlinesbi.sbi",
-                                "sbi.co.in",
-                                "icicibank.com",
-                                "infinity.icicibank.com",
-                                "kotak.com",
-                                "netbanking.kotak.com",
-                                "yesbank.in",
-                                "citibank.co.in",
-                                "online.citibank.co.in",
-                                "americanexpress.com",
-                                "ucobank.com",
-                                "indusind.com",
-                                "hdfcbank.com",
-                                "netbanking.hdfcbank.com"
-                            )
+                            
+                            // Use the fetched whitelist or fallback to hardcoded list
+                            val allowedDomains = if (whitelistUrls.isNotEmpty()) {
+                                whitelistUrls
+                            } else {
+                                listOf(
+                                    "1drv.ms",
+                                    "onedrive.live.com",
+                                    "sbi.bank.in",
+                                    "onlinesbi.sbi",
+                                    "sbi.co.in",
+                                    "icicibank.com",
+                                    "infinity.icicibank.com",
+                                    "kotak.com",
+                                    "netbanking.kotak.com",
+                                    "yesbank.in",
+                                    "citibank.co.in",
+                                    "online.citibank.co.in",
+                                    "americanexpress.com",
+                                    "ucobank.com",
+                                    "indusind.com",
+                                    "hdfcbank.com",
+                                    "netbanking.hdfcbank.com"
+                                )
+                            }
                             
                             val isAllowed = allowedDomains.any { domain ->
                                 host.contains(domain) || host.endsWith(domain)
@@ -433,12 +496,44 @@ fun WebViewScreen() {
                         }
                     }
                     
-                    // Load custom HTML from assets
-                    loadUrl("file:///android_asset/index.html")
+                    // Load custom HTML from assets with user's name
+                    try {
+                        val htmlContent = context.assets.open("index.html").bufferedReader().use { it.readText() }
+                        val displayName = if (userName.isNotBlank()) userName else "User"
+                        Log.d(TAG, "Loading HTML with userName: '$displayName'")
+                        val personalizedHtml = htmlContent.replace("Welcome, Nimit", "Welcome, $displayName")
+                        loadDataWithBaseURL(
+                            "file:///android_asset/",
+                            personalizedHtml,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error loading HTML: ${e.message}", e)
+                        loadUrl("file:///android_asset/index.html")
+                    }
                 }.also { webView = it }
             },
             update = { view ->
                 webView = view
+                // Reload with updated userName when it changes
+                if (userName.isNotBlank()) {
+                    try {
+                        val htmlContent = context.assets.open("index.html").bufferedReader().use { it.readText() }
+                        val personalizedHtml = htmlContent.replace("Welcome, Nimit", "Welcome, $userName")
+                        Log.d(TAG, "Updating HTML with userName: '$userName'")
+                        view.loadDataWithBaseURL(
+                            "file:///android_asset/",
+                            personalizedHtml,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error updating HTML: ${e.message}", e)
+                    }
+                }
             }
         )
     }

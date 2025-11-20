@@ -1,6 +1,7 @@
 package com.secure.privacyfirst.data
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -15,6 +16,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "us
 class UserPreferencesManager(private val context: Context) {
     
     companion object {
+        private const val TAG = "UserPreferencesManager"
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         private val USER_NAME = stringPreferencesKey("user_name")
@@ -30,7 +32,9 @@ class UserPreferencesManager(private val context: Context) {
     }
     
     val userName: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[USER_NAME] ?: ""
+        val name = preferences[USER_NAME] ?: ""
+        Log.d(TAG, "Retrieved userName from DataStore: '$name'")
+        name
     }
     
     val securityLevel: Flow<SecurityLevel> = context.dataStore.data.map { preferences ->
@@ -45,10 +49,12 @@ class UserPreferencesManager(private val context: Context) {
     }
     
     suspend fun setSetupCompleted(userName: String) {
+        Log.d(TAG, "Saving userName to DataStore: '$userName'")
         context.dataStore.edit { preferences ->
             preferences[SETUP_COMPLETED] = true
             preferences[USER_NAME] = userName
         }
+        Log.d(TAG, "userName saved successfully")
     }
     
     suspend fun setSecurityLevel(level: SecurityLevel) {

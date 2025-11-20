@@ -24,10 +24,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.secure.privacyfirst.data.CryptoUtils
 import com.secure.privacyfirst.data.PinEntity
 import com.secure.privacyfirst.data.UserPreferencesManager
 import kotlinx.coroutines.launch
+
+private const val TAG = "SetupScreen"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -191,6 +194,7 @@ fun SetupScreen(
                                 )
                                 
                                 // Save setup completion and user name
+                                Log.d(TAG, "Saving userName: '$userName'")
                                 preferencesManager.setSetupCompleted(userName)
                                 
                                 Toast.makeText(

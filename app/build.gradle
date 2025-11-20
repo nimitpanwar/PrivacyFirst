@@ -73,7 +73,7 @@ dependencies {
     implementation libs.androidx.activity.compose
     
     // Compose
-    implementation platform('androidx.compose:compose-bom:2025.11.00')
+    implementation platform('androidx.compose:compose-bom:2025.11.01')
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.graphics
     implementation libs.androidx.compose.ui.tooling.preview
@@ -98,10 +98,16 @@ dependencies {
     implementation libs.androidx.room.ktx
     ksp libs.androidx.room.compiler
     
+    // Retrofit & Gson for API calls
+    implementation libs.retrofit
+    implementation libs.retrofit.converter.gson
+    implementation libs.okhttp.logging
+    implementation libs.gson
+    
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit.v115
     androidTestImplementation libs.androidx.espresso.core.v351
-    androidTestImplementation platform('androidx.compose:compose-bom:2025.11.00')
+    androidTestImplementation platform('androidx.compose:compose-bom:2025.11.01')
     androidTestImplementation libs.androidx.compose.ui.test.junit4
     debugImplementation libs.androidx.compose.ui.tooling
     debugImplementation libs.androidx.compose.ui.test.manifest
