@@ -27,27 +27,49 @@ data class DeleteUrlRequest(
     val url: String
 )
 
-// Response models
+// Response models with proper validation and defaults
 data class LoginResponse(
     @SerializedName("token")
     val token: String,
     @SerializedName("expiresIn")
-    val expiresIn: String
-)
+    val expiresIn: String = "1h"
+) {
+    init {
+        require(token.isNotBlank()) { "Token cannot be empty" }
+    }
+}
 
 data class WhitelistResponse(
     @SerializedName("urls")
-    val urls: List<String>,
+    val urls: List<String> = emptyList(),
     @SerializedName("count")
-    val count: Int
-)
+    val count: Int = 0
+) {
+    init {
+        require(count >= 0) { "Count cannot be negative" }
+        require(urls.size == count) { "URLs list size must match count" }
+    }
+}
 
 data class ApiErrorResponse(
     @SerializedName("message")
-    val message: String
+    val message: String = "Unknown error"
 )
 
 data class SuccessResponse(
     @SerializedName("message")
-    val message: String
+    val message: String = "Success",
+    @SerializedName("doc")
+    val doc: WhitelistDoc? = null
+)
+
+data class WhitelistDoc(
+    @SerializedName("url")
+    val url: String,
+    @SerializedName("addedBy")
+    val addedBy: String,
+    @SerializedName("createdAt")
+    val createdAt: String,
+    @SerializedName("_id")
+    val id: String
 )

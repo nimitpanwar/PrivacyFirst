@@ -8,7 +8,7 @@ interface ApiService {
     @POST("api/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
     
-    @GET("api/whitelist/")
+    @GET("api/whitelist")
     suspend fun getWhitelist(@Header("Authorization") token: String): Response<WhitelistResponse>
     
     @POST("api/whitelist/add")

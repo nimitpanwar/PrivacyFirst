@@ -10,10 +10,18 @@ class WhitelistRepository(private val context: Context) {
     private val apiService = RetrofitClient.apiService
     private val tokenManager = TokenManager(context)
     
+    // In-memory cache for whitelist
+    private var cachedWhitelist: List<String>? = null
+    private var cacheTimestamp: Long = 0
+    private val cacheDuration = 5 * 60 * 1000L // 5 minutes
+    
     companion object {
         private const val TAG = "WhitelistRepository"
         private const val ADMIN_USERNAME = "admin"
-        private const val ADMIN_PASSWORD = "pass123"
+        // Updated password to match API documentation
+        private const val ADMIN_PASSWORD = "Byf8\$G&F*G8vGEfuhfuhfEHU!89f2qfiHT88%ffyutf7^s"
+        private const val MAX_RETRY_ATTEMPTS = 3
+        private const val INITIAL_RETRY_DELAY = 1000L // 1 second
     }
     
     /**
@@ -41,15 +49,22 @@ class WhitelistRepository(private val context: Context) {
     }
     
     /**
-     * Get whitelist URLs from server
+     * Get whitelist URLs from server with caching and retry logic
      */
-    suspend fun getWhitelist(): Result<List<String>> {
+    suspend fun getWhitelist(forceRefresh: Boolean = false): Result<List<String>> {
         return withContext(Dispatchers.IO) {
             try {
+                // Check in-memory cache first
+                if (!forceRefresh && cachedWhitelist != null && 
+                    System.currentTimeMillis() - cacheTimestamp < cacheDuration) {
+                    Log.d(TAG, "Returning cached whitelist: ${cachedWhitelist!!.size} URLs")
+                    return@withContext Result.success(cachedWhitelist!!)
+                }
+                
                 // Check if token is valid, if not login first
                 if (!tokenManager.isTokenValid()) {
                     Log.d(TAG, "Token expired or missing, logging in...")
-                    val loginResult = login()
+                    val loginResult = loginWithRetry()
                     if (loginResult.isFailure) {
                         return@withContext Result.failure(loginResult.exceptionOrNull() ?: Exception("Login failed"))
                     }
@@ -61,11 +76,32 @@ class WhitelistRepository(private val context: Context) {
                     return@withContext Result.failure(Exception("No authentication token"))
                 }
                 
-                val response = apiService.getWhitelist(authHeader)
+                // Fetch with retry logic
+                val response = retryApiCall { apiService.getWhitelist(authHeader) }
+                
                 if (response.isSuccessful && response.body() != null) {
                     val urls = response.body()!!.urls
+                    // Update cache
+                    cachedWhitelist = urls
+                    cacheTimestamp = System.currentTimeMillis()
                     Log.d(TAG, "Whitelist fetched successfully: ${urls.size} URLs")
                     Result.success(urls)
+                } else if (response.code() == 401) {
+                    // Token might be invalid, try re-login and retry
+                    Log.d(TAG, "Received 401, attempting re-login...")
+                    val loginResult = loginWithRetry()
+                    if (loginResult.isSuccess) {
+                        val newAuthHeader = tokenManager.getAuthHeader()!!
+                        val retryResponse = apiService.getWhitelist(newAuthHeader)
+                        if (retryResponse.isSuccessful && retryResponse.body() != null) {
+                            val urls = retryResponse.body()!!.urls
+                            cachedWhitelist = urls
+                            cacheTimestamp = System.currentTimeMillis()
+                            Log.d(TAG, "Whitelist fetched after re-login: ${urls.size} URLs")
+                            return@withContext Result.success(urls)
+                        }
+                    }
+                    Result.failure(Exception("Authentication failed"))
                 } else {
                     val error = "Failed to fetch whitelist: ${response.code()}"
                     Log.e(TAG, error)
@@ -73,9 +109,71 @@ class WhitelistRepository(private val context: Context) {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching whitelist: ${e.message}", e)
-                Result.failure(e)
+                // Return cached data if available even on error
+                if (cachedWhitelist != null) {
+                    Log.d(TAG, "Returning stale cache due to error")
+                    Result.success(cachedWhitelist!!)
+                } else {
+                    Result.failure(e)
+                }
             }
         }
+    }
+    
+    /**
+     * Login with exponential backoff retry
+     */
+    private suspend fun loginWithRetry(): Result<String> {
+        var lastException: Exception? = null
+        repeat(MAX_RETRY_ATTEMPTS) { attempt ->
+            try {
+                val result = login()
+                if (result.isSuccess) {
+                    return result
+                }
+                lastException = result.exceptionOrNull() as? Exception
+            } catch (e: Exception) {
+                lastException = e
+            }
+            
+            if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+                val delay = INITIAL_RETRY_DELAY * (1 shl attempt) // Exponential backoff
+                Log.d(TAG, "Login attempt ${attempt + 1} failed, retrying in ${delay}ms...")
+                kotlinx.coroutines.delay(delay)
+            }
+        }
+        return Result.failure(lastException ?: Exception("Login failed after $MAX_RETRY_ATTEMPTS attempts"))
+    }
+    
+    /**
+     * Generic retry logic for API calls
+     */
+    private suspend fun <T> retryApiCall(
+        apiCall: suspend () -> retrofit2.Response<T>
+    ): retrofit2.Response<T> {
+        var lastException: Exception? = null
+        repeat(MAX_RETRY_ATTEMPTS) { attempt ->
+            try {
+                return apiCall()
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < MAX_RETRY_ATTEMPTS - 1) {
+                    val delay = INITIAL_RETRY_DELAY * (1 shl attempt)
+                    Log.d(TAG, "API call attempt ${attempt + 1} failed, retrying in ${delay}ms...")
+                    kotlinx.coroutines.delay(delay)
+                }
+            }
+        }
+        throw lastException ?: Exception("API call failed after $MAX_RETRY_ATTEMPTS attempts")
+    }
+    
+    /**
+     * Clear the in-memory cache
+     */
+    fun clearCache() {
+        cachedWhitelist = null
+        cacheTimestamp = 0
+        Log.d(TAG, "Cache cleared")
     }
     
     /**
