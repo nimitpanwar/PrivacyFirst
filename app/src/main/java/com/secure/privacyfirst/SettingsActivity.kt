@@ -7,6 +7,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
@@ -55,6 +57,7 @@ class SettingsActivity : ComponentActivity() {
 @Composable
 fun SettingsNavigation(onBackClick: () -> Unit) {
     val navController = rememberNavController()
+    val context = LocalContext.current
     
     NavHost(
         navController = navController,
@@ -68,6 +71,9 @@ fun SettingsNavigation(onBackClick: () -> Unit) {
                 },
                 onNavigateToSetupPin = {
                     navController.navigate("setup_pin")
+                },
+                onNavigateToTerms = {
+                    context.startActivity(Intent(context, TermsActivity::class.java))
                 }
             )
         }
@@ -98,7 +104,8 @@ fun SettingsNavigation(onBackClick: () -> Unit) {
 fun SettingsScreen(
     onBackClick: () -> Unit,
     onNavigateToPasswordManager: () -> Unit = {},
-    onNavigateToSetupPin: () -> Unit = {}
+    onNavigateToSetupPin: () -> Unit = {},
+    onNavigateToTerms: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager(context) }
@@ -127,6 +134,7 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             // Security Level Section
             Text(
@@ -295,88 +303,30 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
+                    .clickable { onNavigateToTerms() }
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "🔒 HTTPS Only",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Only secure HTTPS connections are allowed. HTTP traffic is blocked.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "🛡️ SSL Certificate Verification",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Connections verified with SSL certificates. Trusted banking sites are allowed to proceed.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "🏦 Trusted Banking Sites Only",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Access restricted to verified banking domains: SBI, ICICI, Kotak, YES Bank, Citi, AMEX, UCO, IndusInd.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "🧹 Clear Browsing Data",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Automatically cleared after each session. No cookies, no history, no traces.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "🔐 Enhanced Privacy",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = "Geolocation disabled, form data not saved, mixed content blocked.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "📜 Terms and Conditions",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = "Read the terms and conditions",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Go to Terms and Conditions",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
             }
