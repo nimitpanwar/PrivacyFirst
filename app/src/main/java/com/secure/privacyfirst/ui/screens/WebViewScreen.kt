@@ -27,6 +27,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -72,6 +74,7 @@ fun WebViewScreen() {
     var showCameraWarning by remember { mutableStateOf(false) }
     var showMicWarning by remember { mutableStateOf(false) }
     var showExternalAppWarning by remember { mutableStateOf(false) }
+    var showExitDialog by remember { mutableStateOf(false) }
     var externalUrl by remember { mutableStateOf("") }
     var pendingPermissionRequest by remember { mutableStateOf<PermissionRequest?>(null) }
     
@@ -149,8 +152,8 @@ fun WebViewScreen() {
             webView?.goBack()
         } else {
             // If can't go back in WebView, we're at the home page
-            // You might want to show an exit dialog or just stay on the page
-            Toast.makeText(context, "Already at home page", Toast.LENGTH_SHORT).show()
+            // Show exit confirmation dialog
+            showExitDialog = true
         }
     }
     
@@ -628,6 +631,44 @@ fun WebViewScreen() {
                     "Stayed on trusted banking sites", 
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+        )
+    }
+    
+    // Exit confirmation dialog
+    if (showExitDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            icon = {
+                androidx.compose.material3.Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.ExitToApp,
+                    contentDescription = "Exit App"
+                )
+            },
+            title = {
+                androidx.compose.material3.Text(text = "Exit App")
+            },
+            text = {
+                androidx.compose.material3.Text(
+                    text = "Are you sure you want to exit Privacy First Browser?"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        (context as? MainActivity)?.finish()
+                    }
+                ) {
+                    androidx.compose.material3.Text("Exit")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    androidx.compose.material3.Text("Cancel")
+                }
             }
         )
     }
