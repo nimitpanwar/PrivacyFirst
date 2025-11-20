@@ -100,12 +100,12 @@ fun SetupScreen(
         OutlinedTextField(
             value = pin,
             onValueChange = { 
-                if (it.length <= 6 && it.all { char -> char.isDigit() }) {
+                if (it.length <= 4 && it.all { char -> char.isDigit() }) {
                     pin = it
                     showError = false
                 }
             },
-            label = { Text("Create 4-6 Digit PIN") },
+            label = { Text("Create 4 Digit PIN") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = if (isPinVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -130,7 +130,7 @@ fun SetupScreen(
         OutlinedTextField(
             value = confirmPin,
             onValueChange = { 
-                if (it.length <= 6 && it.all { char -> char.isDigit() }) {
+                if (it.length <= 4 && it.all { char -> char.isDigit() }) {
                     confirmPin = it
                     showError = false
                 }
@@ -174,9 +174,9 @@ fun SetupScreen(
                         showError = true
                         errorMessage = "Please enter your name"
                     }
-                    pin.length < 4 -> {
+                    pin.length != 4 -> {
                         showError = true
-                        errorMessage = "PIN must be at least 4 digits"
+                        errorMessage = "PIN must be exactly 4 digits"
                     }
                     pin != confirmPin -> {
                         showError = true
@@ -218,7 +218,7 @@ fun SetupScreen(
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
             ),
-            enabled = userName.isNotBlank() && pin.length >= 4 && confirmPin.length >= 4
+            enabled = userName.isNotBlank() && pin.length == 4 && confirmPin.length == 4
         ) {
             Text(
                 text = "Complete Setup",
