@@ -1,9 +1,11 @@
 package com.secure.privacyfirst.ui.screens
 
+import android.Manifest
 import android.app.DownloadManager
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -11,12 +13,16 @@ import android.view.WindowManager
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
 import android.webkit.JavascriptInterface
+import android.webkit.PermissionRequest
 import android.webkit.SslErrorHandler
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.core.content.ContextCompat
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,8 +42,13 @@ import com.secure.privacyfirst.MainActivity
 import com.secure.privacyfirst.SettingsActivity
 import com.secure.privacyfirst.data.SecurityLevel
 import com.secure.privacyfirst.data.UserPreferencesManager
+import com.secure.privacyfirst.ui.components.CameraAccessWarningDialog
+import com.secure.privacyfirst.ui.components.ExternalAppWarningDialog
+import com.secure.privacyfirst.ui.components.MicrophoneAccessWarningDialog
 
 private const val TAG = "WebViewScreen"
+private const val CAMERA_PERMISSION_REQUEST_CODE = 100
+private const val MIC_PERMISSION_REQUEST_CODE = 101
 
 @Composable
 fun WebViewScreen() {
@@ -45,6 +56,13 @@ fun WebViewScreen() {
     val preferencesManager = remember { UserPreferencesManager(context) }
     val securityLevel by preferencesManager.securityLevel.collectAsState(initial = SecurityLevel.MEDIUM)
     var webView by remember { mutableStateOf<WebView?>(null) }
+    
+    // Warning dialog states
+    var showCameraWarning by remember { mutableStateOf(false) }
+    var showMicWarning by remember { mutableStateOf(false) }
+    var showExternalAppWarning by remember { mutableStateOf(false) }
+    var externalUrl by remember { mutableStateOf("") }
+    var pendingPermissionRequest by remember { mutableStateOf<PermissionRequest?>(null) }
     
     // Apply window security flags based on security level
     DisposableEffect(securityLevel) {
@@ -253,12 +271,10 @@ fun WebViewScreen() {
                             }
                             
                             if (!isAllowed) {
-                                Toast.makeText(
-                                    context,
-                                    "Access restricted to trusted banking sites",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                Log.w(TAG, "Blocked non-whitelisted domain: $host")
+                                // Show external app warning instead of blocking directly
+                                externalUrl = url
+                                showExternalAppWarning = true
+                                Log.w(TAG, "Non-whitelisted domain attempted: $host")
                                 return true
                             }
                             
@@ -382,12 +398,141 @@ fun WebViewScreen() {
                         }
                     }
                     
+                    // WebChromeClient for permission handling
+                    webChromeClient = object : WebChromeClient() {
+                        override fun onPermissionRequest(request: PermissionRequest?) {
+                            request?.let {
+                                val resources = it.resources
+                                
+                                // Check what permissions are requested
+                                val needsCamera = resources.contains(PermissionRequest.RESOURCE_VIDEO_CAPTURE)
+                                val needsMic = resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+                                
+                                when {
+                                    needsCamera && needsMic -> {
+                                        // Both camera and mic requested
+                                        pendingPermissionRequest = request
+                                        showCameraWarning = true
+                                    }
+                                    needsCamera -> {
+                                        // Only camera requested
+                                        pendingPermissionRequest = request
+                                        showCameraWarning = true
+                                    }
+                                    needsMic -> {
+                                        // Only mic requested
+                                        pendingPermissionRequest = request
+                                        showMicWarning = true
+                                    }
+                                    else -> {
+                                        // Other permissions - deny by default for security
+                                        request.deny()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                     // Load custom HTML from assets
                     loadUrl("file:///android_asset/index.html")
                 }.also { webView = it }
             },
             update = { view ->
                 webView = view
+            }
+        )
+    }
+    
+    // Warning Dialogs
+    if (showCameraWarning) {
+        CameraAccessWarningDialog(
+            onDismiss = { 
+                showCameraWarning = false
+                pendingPermissionRequest?.deny()
+                pendingPermissionRequest = null
+            },
+            onAllow = {
+                showCameraWarning = false
+                val activity = context as? ComponentActivity
+                
+                // Check if camera permission is granted
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) 
+                    == PackageManager.PERMISSION_GRANTED) {
+                    // Permission already granted, grant to webview
+                    val resources = pendingPermissionRequest?.resources ?: emptyArray()
+                    pendingPermissionRequest?.grant(resources)
+                    pendingPermissionRequest = null
+                } else {
+                    // Request camera permission from user
+                    activity?.requestPermissions(
+                        arrayOf(Manifest.permission.CAMERA),
+                        CAMERA_PERMISSION_REQUEST_CODE
+                    )
+                }
+            },
+            onDeny = {
+                showCameraWarning = false
+                pendingPermissionRequest?.deny()
+                pendingPermissionRequest = null
+                Toast.makeText(context, "Camera access denied", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+    
+    if (showMicWarning) {
+        MicrophoneAccessWarningDialog(
+            onDismiss = { 
+                showMicWarning = false
+                pendingPermissionRequest?.deny()
+                pendingPermissionRequest = null
+            },
+            onAllow = {
+                showMicWarning = false
+                val activity = context as? ComponentActivity
+                
+                // Check if microphone permission is granted
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) 
+                    == PackageManager.PERMISSION_GRANTED) {
+                    // Permission already granted, grant to webview
+                    val resources = pendingPermissionRequest?.resources ?: emptyArray()
+                    pendingPermissionRequest?.grant(resources)
+                    pendingPermissionRequest = null
+                } else {
+                    // Request microphone permission from user
+                    activity?.requestPermissions(
+                        arrayOf(Manifest.permission.RECORD_AUDIO),
+                        MIC_PERMISSION_REQUEST_CODE
+                    )
+                }
+            },
+            onDeny = {
+                showMicWarning = false
+                pendingPermissionRequest?.deny()
+                pendingPermissionRequest = null
+                Toast.makeText(context, "Microphone access denied", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+    
+    if (showExternalAppWarning) {
+        ExternalAppWarningDialog(
+            url = externalUrl,
+            onDismiss = { 
+                showExternalAppWarning = false
+            },
+            onProceed = {
+                showExternalAppWarning = false
+                // User chose to proceed - load the external URL
+                webView?.loadUrl(externalUrl)
+                Log.w(TAG, "User proceeded to external URL: $externalUrl")
+            },
+            onCancel = {
+                showExternalAppWarning = false
+                Toast.makeText(
+                    context, 
+                    "Stayed on trusted banking sites", 
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         )
     }
